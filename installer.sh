@@ -1,10 +1,14 @@
 #!/bin/bash
+################################################################################
 # Nyx's OSX bootstrapper
+################################################################################
 
 set -euo pipefail
 IFS=$'n\t'
-
+################################################################################
 # Install xcode
+################################################################################
+
 if ! command -v xcode-select &>/dev/null; then
     echo "Xcode Command Line Tools not found. Installing..."
     xcode-select --install || true
@@ -14,7 +18,10 @@ fi
 
 SUDO_USER=$(whoami)
 
+################################################################################
 # Install brew
+################################################################################
+
 if ! command -v brew >/dev/null; then
     echo "Homebrew not found. Installing..."
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
@@ -25,7 +32,11 @@ fi
 brew update && brew upgrade
 
 echo "install gnu tools and utilities"
+
+################################################################################
 # GNU core utilities
+################################################################################
+
 brew install coreutils
 brew install gnu-sed
 brew install gnu-tar
@@ -35,8 +46,10 @@ brew install gnu-which
 # GNU tools
 brew install findutils
 
+################################################################################
 # Install stuff
-# I had this written as an array but im too lazy to figure out why it wasnt working so fuck it we do it manually
+################################################################################
+
 echo "Installing cask apps..."
 
 brew install librewolf --cask --no-quarantine
@@ -50,6 +63,7 @@ brew install hot --cask
 brew install discord --cask
 brew install spotify --cask
 brew install anki --cask
+brew install surfshark --cask
 
 echo "Installing packages..."
 
@@ -62,6 +76,8 @@ brew install neofetch
 brew install gh
 brew install neovim
 brew install node
+brew install amethyst
+brew install tmux
 
 echo "Installing Python packages..."
 sudo -u $SUDO_USER pip3 install --upgrade pip
@@ -74,12 +90,116 @@ brew cleanup
 echo "Ask the doctor"
 brew doctor
 
-echo "Installing nvim configs"
+################################################################################
+# Config
+################################################################################
+
+#echo "Installing nvim configs"
 # clone config files
-gh auth login # login since the repo is private
-mkdir ~/.config/nvim && cd ~/.config/nvim
-git clone https://github.com/Nyxnix/nyx-nvim
+#gh auth login # login since the repo is private
+#mkdir ~/.config/nvim && cd ~/.config/nvim
+#git clone https://github.com/Nyxnix/nyx-nvim
 
 # TODO: replace the above with a public dotfile repo eventually
+# programs to grab configs for
+# iterm2
+# nvim
+# ~/.zshrc
+# omz configs
 
-echo "OSX bootstrapping done"
+################################################################################
+# System Preferences
+################################################################################
+
+# System Preferences > General > Language & Region
+defaults write ".GlobalPreferences_m" AppleLanguages -array en-US ja-JP
+defaults write -globalDomain AppleLanguages -array en-US ja-JP
+
+################################################################################
+# System Preferences > Appearance
+################################################################################
+
+# Appearance: Auto
+defaults write -globalDomain AppleInterfaceStyleSwitchesAutomatically -bool true
+
+# Control Centre Modules > Sound > Always Show in Menu Bar
+defaults write "com.apple.controlcenter" "NSStatusItem Visible Sound" -bool true
+
+# Menu Bar Only > Spotlight > Don't Show in Menu Bar
+defaults -currentHost write com.apple.Spotlight MenuItemHidden -int 1
+
+# Control Centre Modules > Screen Mirroring > Don't Show in Menu Bar
+defaults write "com.apple.airplay" showInMenuBarIfPresent -bool false
+
+################################################################################
+# System Preferences > Siri & Spotlight
+################################################################################
+
+#Ask Siri
+defaults write com.apple.Siri SiriPrefStashedStatusMenuVisible -bool false
+defaults write com.apple.Siri VoiceTriggerUserEnabled -bool false
+
+################################################################################
+# System Preferences > Desktop & Dock
+################################################################################
+
+# Dock > Minimize windows into application icon
+defaults write com.apple.dock minimize-to-application -bool true
+
+# Dock > Automatically hide and show the Dock
+defaults write com.apple.dock autohide -bool true
+
+# Dock > Automatically hide and show the Dock (duration)
+defaults write com.apple.dock autohide-time-modifier -float 0.4
+
+# Dock > Automatically hide and show the Dock (delay)
+defaults write com.apple.dock autohide-delay -float 0
+
+# Show recent applications in Dock
+defaults write com.apple.dock "show-recents"  -bool false
+
+################################################################################
+# System Preferences > Keyboard
+################################################################################
+
+# Txt Input > Correct spelling automatically
+defaults write -globalDomain NSAutomaticSpellingCorrectionEnabled -bool false
+
+# Txt Input > Capitalise words automatically
+defaults write -globalDomain NSAutomaticCapitalizationEnabled -bool false
+
+# Txt Input > Add full stop with double-space
+defaults write -globalDomain NSAutomaticPeriodSubstitutionEnabled -bool false
+
+################################################################################
+# System Preferences > Trackpad
+################################################################################
+
+# Tap to click
+defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad Clicking -bool true
+
+################################################################################
+# Finder > Preferences
+################################################################################
+
+# Show all filename extensions
+defaults write NSGlobalDomain AppleShowAllExtensions -bool true
+
+# Show wraning before changing an extension
+defaults write com.apple.finder FXEnableExtensionChangeWarning -bool false
+
+# Show wraning before removing from iCloud Drive
+defaults write com.apple.finder FXEnableRemoveFromICloudDriveWarning -bool false
+
+# Finder > View > As List
+defaults write com.apple.finder FXPreferredViewStyle -string "Nlsv"
+
+# Finder > View > Show Path Bar
+defaults write com.apple.finder ShowPathbar -bool true
+
+# Kill affected apps
+for app in "Dock" "Finder"; do
+  killall "${app}" > /dev/null 2>&1
+done
+
+echo "OSX bootstrapping done! Some changes may reqire a logout/reboot to take effect."
