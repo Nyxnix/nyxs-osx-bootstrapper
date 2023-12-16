@@ -75,18 +75,19 @@ echo "Installing brew packages..."
 echo "###########################"
 
 brew install librewolf --cask --no-quarantine
-brew install rectangle --cask
 brew install iterm2 --cask
 brew install linearmouse --cask
 brew install aldente --cask
 brew install appcleaner --cask
 brew install the-unarchiver --cask
-brew install hot --cask
 brew install discord --cask
 brew install spotify --cask
 brew install anki --cask
 brew install surfshark --cask
-brew install parallels --cask
+
+# vm stuff
+brew install qemu --cask
+# install utm for qemu gui using wget
 
 brew install ffmpeg
 brew install git
@@ -97,7 +98,6 @@ brew install neofetch
 brew install gh
 brew install neovim
 brew install node
-brew install amethyst
 brew install tmux
 
 echo "#############################"
@@ -119,6 +119,18 @@ echo "##############"
 brew doctor
 
 ################################################################################
+# Yabai WM
+################################################################################
+
+echo "##########################################"
+echo "Installing Yabai WM, skhd, and spacebar..."
+echo "##########################################"
+
+brew install koekeishiya/formulae/yabai
+brew install koekeishiya/formulae/skhd
+brew install cmacrae/formulae/spacebar
+
+################################################################################
 # Config
 ################################################################################
 
@@ -126,19 +138,16 @@ echo "#####################"
 echo "Installing configs..."
 echo "#####################"
 
-# programs to grab configs for
-# iterm2
-# nvim
-# ~/.zshrc
-# linearmouse
-
-# Download dotfiles and moving to .config folder
-# git clone <URL>
-# cd <REPO_FOLDER>
-# mv */!(.zshrc|.oh-my-zsh|.local) ~/.config/
-# cd .. && rm -r <REPO FOLDER>
-# mv .oh-my-zsh ~/
-# mv .local ~/
+git clone https://github.com/Nyxnix/osx-dotfiles
+cd osx-dotfiles
+# check if .config exists
+if [ -d "~/.config" ]; then
+  echo "~/.config does exist."
+  mkdir ~/.config
+fi
+mv .config ~/.config
+mv .skhdrc ~/.config
+mv .zshrc ~/
 
 ################################################################################
 # System Preferences
@@ -148,14 +157,11 @@ echo "#################################"
 echo "Changing macOS system settings..."
 echo "#################################"
 
+# yes i know this part sucks to read, im not fixing it :)
+
 # System Preferences > General > Language & Region
 defaults write ".GlobalPreferences_m" AppleLanguages -array en-US ja-JP
 defaults write -globalDomain AppleLanguages -array en-US ja-JP
-
-################################################################################
-# System Preferences > Appearance
-################################################################################
-
 # Appearance: Auto
 defaults write -globalDomain AppleInterfaceStyleSwitchesAutomatically -bool true
 # Control Centre Modules > Sound > Always Show in Menu Bar
@@ -164,19 +170,9 @@ defaults write "com.apple.controlcenter" "NSStatusItem Visible Sound" -bool true
 defaults -currentHost write com.apple.Spotlight MenuItemHidden -int 1
 # Control Centre Modules > Screen Mirroring > Don't Show in Menu Bar
 defaults write "com.apple.airplay" showInMenuBarIfPresent -bool false
-
-################################################################################
-# System Preferences > Siri & Spotlight
-################################################################################
-
 #Ask Siri
 defaults write com.apple.Siri SiriPrefStashedStatusMenuVisible -bool false
 defaults write com.apple.Siri VoiceTriggerUserEnabled -bool false
-
-################################################################################
-# System Preferences > Desktop & Dock
-################################################################################
-
 # Dock > Minimize windows into application icon
 defaults write com.apple.dock minimize-to-application -bool true
 # Dock > Automatically hide and show the Dock
@@ -187,29 +183,12 @@ defaults write com.apple.dock autohide-time-modifier -float 0.4
 defaults write com.apple.dock autohide-delay -float 0
 # Show recent applications in Dock
 defaults write com.apple.dock "show-recents"  -bool false
-
-################################################################################
-# System Preferences > Keyboard
-################################################################################
-
-# Txt Input > Correct spelling automatically
-defaults write -globalDomain NSAutomaticSpellingCorrectionEnabled -bool false
 # Txt Input > Capitalise words automatically
 defaults write -globalDomain NSAutomaticCapitalizationEnabled -bool false
 # Txt Input > Add full stop with double-space
 defaults write -globalDomain NSAutomaticPeriodSubstitutionEnabled -bool false
-
-################################################################################
-# System Preferences > Trackpad
-################################################################################
-
 # Tap to click
 defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad Clicking -bool true
-
-################################################################################
-# Finder > Preferences
-################################################################################
-
 # Show all filename extensions
 defaults write NSGlobalDomain AppleShowAllExtensions -bool true
 # Show wraning before changing an extension
@@ -220,6 +199,20 @@ defaults write com.apple.finder FXEnableRemoveFromICloudDriveWarning -bool false
 defaults write com.apple.finder FXPreferredViewStyle -string "Nlsv"
 # Finder > View > Show Path Bar
 defaults write com.apple.finder ShowPathbar -bool true
+
+# add new settings changes for yabai
+
+# Start yabai, skhd, spacebar
+yabai --start-service
+skhd --start-service
+brew services start spacebar
+
+# Check if SIP is enabled
+if csrutil status | grep "System Integrity Protection status: enabled" = true
+    echo "Some yabai features require SIP to be disabled. https://github.com/koekeishiya/yabai/wiki/Disabling-System-Integrity-Protection"
+elif csrutil status | grep "System Integrity Protection status: unknown" = true
+    echo "SIP seems to be disabled."
+fi
 
 # Kill affected apps
 for app in "Dock" "Finder"; do
