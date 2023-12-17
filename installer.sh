@@ -76,6 +76,15 @@ brew install gh
 brew install neovim
 brew install node
 brew install tmux
+brew install bash
+
+# Install bashtop
+python3 -m pip install psutil
+git clone https://github.com/aristocratos/bashtop.git
+cd bashtop
+sudo make install
+cd ..
+rm -r bashtop
 
 echo "###########"
 echo "Cleaning up"
