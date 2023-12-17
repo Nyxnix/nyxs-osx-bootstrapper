@@ -3,30 +3,6 @@
 # Nyx's OSX bootstrapper
 ################################################################################
 
-set -euo pipefail
-IFS=$'n\t'
-
-################################################################################
-# Install xcode
-################################################################################
-
-echo "###################"
-echo "Installing xcode..."
-echo "###################"
-
-if ! command -v xcode-select &>/dev/null; then
-    echo "Xcode Command Line Tools not found. Installing..."
-    xcode-select --install || true
-else
-    echo "Xcode Command Line Tools already installed."
-fi
-
-SUDO_USER=$(whoami)
-
-################################################################################
-# Install brew
-################################################################################
-
 echo "##################"
 echo "Installing brew..."
 echo "##################"
@@ -37,6 +13,10 @@ if ! command -v brew >/dev/null; then
 else
     echo "Homebrew is already installed."
 fi
+
+# Add brew to path (not sure why its not still there after script)
+(echo; echo 'eval "$(/opt/homebrew/bin/brew shellenv)"') >> /Users/nyx/.zprofile
+eval "$(/opt/homebrew/bin/brew shellenv)"
 
 brew update && brew upgrade
 
@@ -70,12 +50,13 @@ brew install findutils
 ################################################################################
 # Install stuff
 ################################################################################
+
 echo "###########################"
 echo "Installing brew packages..."
 echo "###########################"
 
 brew install librewolf --cask --no-quarantine
-brew install iterm2 --cask
+brew install alacritty --cask
 brew install linearmouse --cask
 brew install aldente --cask
 brew install appcleaner --cask
@@ -84,10 +65,6 @@ brew install discord --cask
 brew install spotify --cask
 brew install anki --cask
 brew install surfshark --cask
-
-# vm stuff
-brew install qemu --cask
-# install utm for qemu gui using wget
 
 brew install ffmpeg
 brew install git
@@ -100,22 +77,16 @@ brew install neovim
 brew install node
 brew install tmux
 
-echo "#############################"
-echo "Installing Python packages..."
-echo "#############################"
-
-sudo -u $SUDO_USER pip3 install --upgrade pip
-sudo -u $SUDO_USER pip3 install --upgrade setuptools
-sudo -u $SUDO_USER pip3 install virtualenv
-sudo -u $SUDO_USER pip3 install virtualenvwrapper
-
 echo "###########"
 echo "Cleaning up"
 echo "###########"
+
 brew cleanup
+
 echo "##############"
 echo "Ask the doctor"
 echo "##############"
+
 brew doctor
 
 ################################################################################
@@ -145,9 +116,31 @@ if [ -d "~/.config" ]; then
   echo "~/.config does exist."
   mkdir ~/.config
 fi
-mv .config ~/.config
-mv .skhdrc ~/.config
+
+# Move files to right places
+mv .config ~/
+mv .skhdrc ~/
 mv .zshrc ~/
+mv nyx.zsh-theme ~/.oh-my-zsh/themes
+
+# Step out and clean up
+cd ..
+rm -r osx-dotfiles
+
+# Install packer for nvim
+git clone --depth 1 https://github.com/wbthomason/packer.nvim\
+ ~/.local/share/nvim/site/pack/packer/start/packer.nvim
+
+# Get smctemp and compile for menubar script
+git clone https://github.com/narugit/smctemp
+cd smctemp
+sudo make install
+
+# Get fonts for terminal display and menubar
+brew tap homebrew/cask-fonts
+brew tap corgibytes/cask-fonts
+brew install font-awesome-terminal-fonts
+brew install font-fontawesome
 
 ################################################################################
 # System Preferences
@@ -168,8 +161,6 @@ defaults write -globalDomain AppleInterfaceStyleSwitchesAutomatically -bool true
 defaults write "com.apple.controlcenter" "NSStatusItem Visible Sound" -bool true
 # Menu Bar Only > Spotlight > Don't Show in Menu Bar
 defaults -currentHost write com.apple.Spotlight MenuItemHidden -int 1
-# Control Centre Modules > Screen Mirroring > Don't Show in Menu Bar
-defaults write "com.apple.airplay" showInMenuBarIfPresent -bool false
 #Ask Siri
 defaults write com.apple.Siri SiriPrefStashedStatusMenuVisible -bool false
 defaults write com.apple.Siri VoiceTriggerUserEnabled -bool false
@@ -191,9 +182,9 @@ defaults write -globalDomain NSAutomaticPeriodSubstitutionEnabled -bool false
 defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad Clicking -bool true
 # Show all filename extensions
 defaults write NSGlobalDomain AppleShowAllExtensions -bool true
-# Show wraning before changing an extension
+# Show warning before changing an extension
 defaults write com.apple.finder FXEnableExtensionChangeWarning -bool false
-# Show wraning before removing from iCloud Drive
+# Show warning before removing from iCloud Drive
 defaults write com.apple.finder FXEnableRemoveFromICloudDriveWarning -bool false
 # Finder > View > As List
 defaults write com.apple.finder FXPreferredViewStyle -string "Nlsv"
@@ -201,18 +192,13 @@ defaults write com.apple.finder FXPreferredViewStyle -string "Nlsv"
 defaults write com.apple.finder ShowPathbar -bool true
 
 # add new settings changes for yabai
+# Accessibility > Display > Reduce Motion
+defaults write com.apple.accessibility ReduceMotionEnabled -bool true
 
 # Start yabai, skhd, spacebar
 yabai --start-service
 skhd --start-service
 brew services start spacebar
-
-# Check if SIP is enabled
-if csrutil status | grep "System Integrity Protection status: enabled" = true
-    echo "Some yabai features require SIP to be disabled. https://github.com/koekeishiya/yabai/wiki/Disabling-System-Integrity-Protection"
-elif csrutil status | grep "System Integrity Protection status: unknown" = true
-    echo "SIP seems to be disabled."
-fi
 
 # Kill affected apps
 for app in "Dock" "Finder"; do
@@ -221,3 +207,6 @@ done
 
 clear
 echo "OSX bootstrapping done! Some changes may reqire a logout/reboot to take effect."
+echo "Run the following commands to add brew to your path"
+echo "(echo; echo 'eval "$(/opt/homebrew/bin/brew shellenv)"') >> /Users/nyx/.zprofile"
+echo "eval "$(/opt/homebrew/bin/brew shellenv)""
